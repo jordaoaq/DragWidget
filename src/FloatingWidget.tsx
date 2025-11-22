@@ -13,6 +13,7 @@ interface Message {
 interface N8nResponse {
   agentMessage?: string; // A resposta textual do agente
   resumeUrl?: string; // A URL para continuar a conversa
+  chatEnded?: boolean; // Indica se o chat foi finalizado
   [key: string]: any;
 }
 
@@ -32,6 +33,7 @@ const FloatingWidget: React.FC = () => {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isChatEnded, setIsChatEnded] = useState(false);
   const [currentWebhookUrl, setCurrentWebhookUrl] = useState(INITIAL_WEBHOOK);
 
   // Referência para rolar até o final do chat
@@ -66,6 +68,7 @@ const FloatingWidget: React.FC = () => {
       abortControllerRef.current = null;
     }
     setIsTyping(false);
+    setIsChatEnded(false);
 
     // Reseta o estado local imediatamente
     setMessages([
@@ -152,6 +155,11 @@ const FloatingWidget: React.FC = () => {
               type: "agentMessage",
             },
           ]);
+        }
+
+        // Verifica se o chat foi finalizado
+        if (firstResponse.chatEnded) {
+          setIsChatEnded(true);
         }
       }
     } catch (error: any) {
@@ -241,7 +249,7 @@ const FloatingWidget: React.FC = () => {
         </div>
 
         {/* Rodapé do chat */}
-        <div className="chat-footer">
+        <div className={`chat-footer ${isChatEnded ? "chat-ended" : ""}`}>
           <input
             type="text"
             className="chat-input"
@@ -251,12 +259,12 @@ const FloatingWidget: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSend();
             }}
-            disabled={isTyping}
+            disabled={isTyping || isChatEnded}
           />
           <button
             className="send-button"
             onClick={handleSend}
-            disabled={isTyping}
+            disabled={isTyping || isChatEnded}
           >
             Enviar
           </button>
